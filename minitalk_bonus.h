@@ -6,17 +6,19 @@
 /*   By: aabouqas <aabouqas@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/03 14:12:23 by aabouqas          #+#    #+#             */
-/*   Updated: 2024/01/03 14:12:27 by aabouqas         ###   ########.fr       */
+/*   Updated: 2024/01/09 16:56:35 by aabouqas         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef _MINI_TALK_BONUS_
-# define _MINI_TALK_BONUS_
+#ifndef MINITALK_BONUS_H
+# define MINITALK_BONUS_H
 
-#include <signal.h>
-#include <unistd.h>
+# include <signal.h>
+# include <unistd.h>
+# include <stdlib.h>
 
-#include <stdio.h>
-#include <stdlib.h>
+void	_print(char *str);
+void	print_number(int n);
+int		_atoi(char *str);
 
-# endif
+#endif

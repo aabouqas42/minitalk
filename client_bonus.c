@@ -6,72 +6,83 @@
 /*   By: aabouqas <aabouqas@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/03 14:11:58 by aabouqas          #+#    #+#             */
-/*   Updated: 2024/01/03 14:12:03 by aabouqas         ###   ########.fr       */
+/*   Updated: 2024/01/09 16:56:29 by aabouqas         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minitalk_bonus.h"
 
-int	_atoi(char *str)
+int	send_byte(pid_t pid, int c)
 {
-	int	res;
-	int	sign;
+	int	i;
 
-	res = 0;
-	sign = 1;
-	if (*str == '-' || *str == '+')
-	{
-		if (*str == '-')
-			sign = -sign;
-		str++;
-	}
-	while (*str)
-	{
-		if (*str >= '0' && *str <= '9')
-			res = res * 10 + *str - 48;
-		else
-			break;
-		str++;
-	}
-	return (res * sign);
-}
-
-void	send_byte(pid_t pid, int c)
-{
-	int	i = 0;
+	i = 0;
 	while (i < 8)
 	{
 		if (c & 128)
-			kill (pid, SIGUSR1);
+		{
+			if (kill (pid, SIGUSR1) == -1)
+				return (-1);
+		}
 		else
-			kill (pid, SIGUSR2);
+		{
+			if (kill (pid, SIGUSR2) == -1)
+				return (-1);
+		}
 		usleep(100);
 		c = c << 1;
 		i++;
 	}
+	return (0);
 }
 
-int main(int ac, char *av[])
+void	send_message(pid_t pid, char *message)
 {
+	if (*message == 0)
+	{
+		_print("\nError : an empty message can't be sent\n\n");
+		exit(-1);
+	}
+	while (*message)
+	{
+		if (send_byte(pid, *message) == -1)
+		{
+			_print("\nMESSAGE FAILED\n\n");
+			exit(-1);
+		}
+		message++;
+	}
+}
+
+void	sig_handler(int signal)
+{
+	if (signal == SIGUSR1)
+	{
+		_print("\nMESSAGE RECEVIED\n\n");
+		exit(0);
+	}
+}
+
+int	main(int ac, char *av[])
+{
+	pid_t	pid;
+
+	signal(SIGUSR1, sig_handler);
 	if (ac == 3)
 	{
-		pid_t	pid;
-		int		i;
-		char	*str;
-
 		pid = _atoi(av[1]);
 		if (pid <= 0)
-		{
-			write (1, "\033[1;31minvalid process id aka PID\n\033[0m\n", 34);
-			return (-1);
-		}
-		str = av[2];
-		i = 0;
-		while (str[i])
-		{
-			send_byte(pid, str[i]);
-			i++;
-		}
+			return (_print("\ninvalid process id aka PID\n\n"), -1);
+		send_message(pid, av[2]);
 		send_byte(pid, '\0');
 	}
+	else
+	{
+		_print("\nMESSAGE FAILED\n\nUSAGE : ");
+		_print(av[0]);
+		_print(" PID \"Hello 42\"\n");
+		_print("\n[ Run the server_bonus program to get the PID ]\n\n");
+		return (-1);
+	}
+	return (0);
 }

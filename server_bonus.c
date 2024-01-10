@@ -6,63 +6,64 @@
 /*   By: aabouqas <aabouqas@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/03 14:08:41 by aabouqas          #+#    #+#             */
-/*   Updated: 2024/01/03 14:12:41 by aabouqas         ###   ########.fr       */
+/*   Updated: 2024/01/09 17:18:14 by aabouqas         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minitalk_bonus.h"
 
-void	_pn(int	n)
+void	show_char(int *c, int *i, int pid)
 {
-	if (n < 0)
+	if (*c == '\0')
 	{
-		write (1, "-", 1);
-		n = -n;
+		kill (pid, SIGUSR1);
+		return ;
 	}
-	if (n < 10)
-	{
-		char	c;
-		c = n + 48;
-		write (1, &c, 1);
-	} else {
-		_pn (n / 10);
-		_pn (n % 10);
-	}
+	write (1, c, 1);
+	*c = 0;
+	*i = 0;
 }
 
-void	signal_hundler(int signal)
+void	signal_hundler(int signal, siginfo_t *info, void *context)
 {
-	static int c = 0;
-	static int i = 0;
+	static int		c = 0;
+	static int		i = 0;
+	static pid_t	pid = 0;
 
-	if (signal == SIGUSR1)
-		c = (c << 1) + 1;
-	if (signal == SIGUSR2)
-		c = (c << 1);
-	i++;
-	if (i == 8)
+	(void)context;
+	if (pid == 0)
+		pid = info->si_pid;
+	if (pid != info->si_pid)
 	{
-		if (c == '\0')
-			write (1, "\n", 1);
-		else
-			write (1, &c, 1);
 		c = 0;
 		i = 0;
+		pid = 0;
+		write (1, "\n", 1);
+	}
+	if (signal == SIGUSR1 || signal == SIGUSR2)
+	{
+		c = (c << 1) + (signal == SIGUSR1);
+		i++;
+		if (i == 8)
+			show_char(&c, &i, pid);
 	}
 }
 
-int main()
+int	main(void)
 {
-	pid_t	pid;
+	pid_t				pid;
+	struct sigaction	siga;
 
 	pid = getpid();
-	write (1, "PID : ", 6);
-	_pn(pid);
-	write (1, "\n", 1);
+	_print("PID : [ ");
+	print_number(pid);
+	siga.sa_sigaction = signal_hundler;
+	siga.sa_flags = SA_SIGINFO;
+	siga.sa_mask = 0;
+	sigaction(SIGUSR1, &siga, 0);
+	sigaction(SIGUSR2, &siga, 0);
+	_print(" ]\n---------- MESSAGES ----------\n");
 	while (1)
-	{
-		signal(30, signal_hundler);
-		signal(31, signal_hundler);
 		pause();
-	}
+	return (0);
 }
